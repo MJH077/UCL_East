@@ -1,0 +1,310 @@
+---
+title: "BIOS0002 - Practical 1 - PanTHERIA"
+output: pdf_document
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning = F, results = F)
+```
+
+# The PanTHERIA database
+
+This set of exercises uses the PanTHERIA database. This database was generated and published by UCL's Professor Kate Jones and colleagues in 2009. You can read the paper presenting the database if you wish to [here](https://esajournals.onlinelibrary.wiley.com/doi/10.1890/08-1494.1). This database contains species-level information on the life history, ecology and geography of all known extant and recently extinct mammals.
+
+# Aims
+
+In this practical exercise, you should use your knowledge of R to tackle the questions below. 
+
+A text file containing the data has been added to the course Moodle page, under "Week 2: Practical Exercise". You should have downloaded this dataset onto your laptop before the session. If not, do it now!  
+
+
+Things to think about during this exercise:
+
+- There is not often just one way to do things in R, don't worry if your neighbour does something different to you. 
+- Putting a ? before the function name and running that code (e.g. `?mean`) will open up the help file for that function, scroll down to the examples if you need help getting started. 
+- Using good coding practices will be helpful to future you. Things like adding comments before your code can help you to remember what you were doing and why. Try it out by adding a `#` before typing in your script. These sections are not run by R. 
+
+Remember, there are multiple ways to find help when using R, both inside and outside of classes:
+
+- Ask a friend
+- Google it!
+- Ask a question in the course discussion forum
+- Ask a lecturer or PGTA in class
+- Use AI for help only - you should be trying to write the code first!
+
+
+# Let's get started!
+
+## Organising your environment and reading in the data
+
+```{r setup env}
+#install.packages('traitdataform')
+#library(traitdataform)
+
+#setwd("BIOS0002/Exercises") # commented out as does not work within markdown
+
+outdir <- "Outputs/"
+dir.create(outdir)
+
+```
+
+
+1. Have you set up an R project for the module? Charlie covered how to do this in the intro to R video. You can also see this [webpage](https://r4np.com/06_starting_r_projects.html) for information. 
+
+2. Create a directory within your project folder where you can save the outputs from this exercise. You can do this manually by creating a new folder or within R using the `dir.create` function. You could name it "Outputs" or something similar.
+
+3. Start and save a new script in your project folder for today's practical. Ensure it is well commended and well formatted.
+
+4. Use the `read.table` function to read the PanTHERIA dataset into your RStudio environment. The dataset is saved as a text file. The code you need is printed below, look at the help page to understand what each element of the function is for. 
+
+```{r readin, echo = T}
+pantheria <- read.table(file="PanTHERIA_1-0_WR05_Aug2008.txt",
+                        header=TRUE,
+                        sep="\t",
+                        na.strings=c("-999","-999.00"))
+```
+
+
+
+## Exploring the data
+
+As explained above, we will be exploring the PanTHERIA database. Below are some questions to help you explore the dataset and to practise some of your skills in data exploration and manipulation in R. It is important to have a good understanding of what your dataset looks like and any potential issues that might impact your analysis later on. This is especially important if you are using data sources from somewhere else, rather than using data that you have collected yourself since you will be less familiar with it. 
+
+First, look at the structure of the dataset. This will give you a sense of how big it is and how many variables there are likely to be as well, as the type of dataset you have read into the R. 
+
+If you need more information on what is contained in the database, see [this](https://esapubs.org/archive/ecol/E090/184/metadata.htm) metadata file.
+
+4. What is the structure of the data, i.e. how many rows and columns are there, what class of data it is?
+
+
+```{r expl1, echo=FALSE}
+
+nrow(pantheria)
+ncol(pantheria)
+class(pantheria)
+
+# other useful functions
+names(pantheria)
+str(pantheria)
+summary(pantheria)
+
+```
+5. Take a look at the column names of the dataset (there is a function to do this!). Then use the relevant columns to answer the following questions:
+
+- How many species are included in the dataset?
+- How many genera are included in the dataset?
+- Make a table showing the number of species per order, the table should look like the one below (HINT: there is a very obviously named function to help you out here):
+
+```{r expl2, echo=FALSE}
+
+# look up column names
+colnames(pantheria)
+
+# use the length and unique functions to look at the number of unique species names
+length(unique(pantheria$MSW05_Binomial)) # 5416 species, you can see that this is the same as the number of rows.
+length(unique(pantheria$MSW05_Genus)) # 1230 genera
+
+```
+
+
+```{r expl3, echo=FALSE, results = T}
+
+# create a table of orders
+table(pantheria$MSW05_Order)
+
+```
+
+
+# Summarising the data
+
+It is important to explore your data so you that you are aware of the nuances of your particular dataset. Some things could change how you analyse the data, or could be helpful in explaining why you get certain results. It is important to note however that these are data summaries and are not a strict analysis of the data. For that, you will need to use statistical tests or models. This will be covered later in the course. 
+
+6. Make some summaries of the variables included in this dataset. There are missing values in the dataset where the information is not available. You will need to account for this. Here are some ideas to get you going, but feel free to go beyond these few tasks: 
+
+a. What are the minimum and maximum values for body mass?
+b. What is the mean litter size?
+c. Take a look at the quantiles for maximum longevity.
+d. Create a boxplot of the adult bodymass across trophic levels. You can use ggplot if you prefer, or use base R for something quick. Use the help pages to see what options are available to make edits to the plot. `?boxplot` (base R) `?geom_boxplot` (ggplot). See the example plot below for some inspiration (it doesn't need to look exactly the same but take some time to change some of the default variables). 
+e. Choose two variables to explore and calculate the mean, median, and the standard deviation of those variables. 
+
+
+```{r summaries}
+
+min(pantheria$X5.1_AdultBodyMass_g, na.rm = T) # 1.96g
+max(pantheria$X5.1_AdultBodyMass_g, na.rm = T) # 154321305g
+range(pantheria$X5.1_AdultBodyMass_g, na.rm = T) # 1.96 154321304.50
+
+mean(pantheria$X15.1_LitterSize, na.rm = T) # 2.523335
+
+quantile(pantheria$X17.1_MaxLongevity_m, na.rm = T)
+   #   0%     25%     50%     75%    100% 
+   # 3.45   72.00  168.00  264.00 1470.00 
+
+```
+```{r boxplot, result = T}
+unique(pantheria$X6.2_TrophicLevel) # take a look at what the levels of this variable are
+
+pantheria$X6.2_TrophicLevel <- as.factor(pantheria$X6.2_TrophicLevel) # convert them to factors
+
+# create a nice boxplot using base R
+boxplot(X5.1_AdultBodyMass_g ~ X6.2_TrophicLevel, 
+        data = pantheria, 
+        outline = F,
+        xlab = "Trophic level",
+        ylab = "Body mass (g)",
+        boxwex = 0.5,
+        log = "y",
+        col = c('darkred', 'darkgreen', 'darkblue'))
+
+# create a similar boxplot using ggplot2
+# library(ggplot2)
+# ggplot(subset(pantheria, !is.na(X6.2_TrophicLevel)), aes(x = X6.2_TrophicLevel, y = X5.1_AdultBodyMass_g, na.rm = T)) +
+#   geom_boxplot(outlier.shape = NA, fill = c('darkred', 'darkgreen', 'darkblue')) +
+#   scale_y_log10() +
+#   labs(x = "Trophic level", y = "Body mass (g)")
+
+
+```
+
+
+
+# Explore the missing data
+
+As you will have noticed, there are missing values in the dataset. NA values can cause issues with certain functions. It is important to be aware of missing values in any dataset and to be able to deal with them appropriately in any analysis. Can you just remove them from your study or do you need to impute values for those that are missing?
+
+7. Take some time to explore how many NAs there are and where they are present in the dataset. Here are some questions to help focus your explorations:
+
+a. Is the number of NAs the same for each column?
+b. Which column has the most missing values?
+c. Are there any rows without missing values?
+
+Discussion topics: What does this tell you about available data on mammals? Why might it be important to know about these missing values? What decisions might you make about any subsequent analyses based on this information? Talk about these elements with the people sitting next to you.
+
+```{r summaries2}
+
+# there are a number of options for exploring NAs, here are a few of them. 
+summary(pantheria) # will show the number of NAs in each column
+
+sum(is.na(pantheria)) # total number of NAs
+
+summary(complete.cases(pantheria))
+
+test <- pantheria[complete.cases(pantheria), ] # complete cases here selects rows that do not contain NA
+nrow(test) # you can see that there are no rows without NAs
+
+```
+
+
+# Filtering and subsetting
+
+Now we will practise filtering and subsetting. There are multiple ways that this can be done within R so if you are interested try to filter the data using two different approaches. One option could be to use functions available in the `dplyr` package which is part of the tidyverse. You can install and load this package from within RStudio. Or you can use the base R approach using square brackets. Either option is good! 
+
+8. Filter the PanTHERIA dataset to only those mammals with a body mass of 15kg or greater. 
+
+9. For this subset look at the mean, median, and standard deviation of body mass values. 
+
+10. Generate an appropriate plot of the body mass values. You can do this using base plotting or using the ggplot2 package. 
+
+11. Are there any outliers? If so, what mammal is it? Remove any outliers and see what difference this makes to your mean, median and sd values. Discuss how this could affect any analyses using this variable.
+
+Outliers are another reason why it is important to explore any datasets that you use. They can have a strong influence on the summary statistics generated from a dataset. 
+
+When there are missing values within a dataset there are a number of options for how to deal with these. Sometimes, we will just remove those rows where data are missing. Alternatively, it is possible to impute values for those missing rows using information from the rest of the dataset (e.g. the mean). 
+
+Thinking about the influence of outliers, how could outliers affect your imputed values and so your final dataset? Take some time to discuss.
+
+```{r largemams, message = F, eval = F }
+
+# using typical square brackets subsetting
+largemams <- pantheria[pantheria$X5.1_AdultBodyMass_g >= 15000 & !is.na(pantheria$X5.1_AdultBodyMass_g), ] 
+# note that you will get different sizes outputs depending on whether you account for NAs or not
+
+# subset function
+largemams2 <- subset(pantheria, X5.1_AdultBodyMass_g >= 15000)
+
+# dplyr method
+library(dplyr)
+largemams3 <- pantheria %>% subset(X5.1_AdultBodyMass_g >= 15000)
+# this version deals with the NAs
+
+# each of these methods results in a subset of 370 rows
+
+
+
+# mean body mass
+mean(largemams$X5.1_AdultBodyMass_g)/1000 #/1000 converts the grams to kilograms, 1693.584
+
+# median body mass
+median(largemams$X5.1_AdultBodyMass_g)/1000 # 93.21602
+
+# sd body mass
+sd(largemams$X5.1_AdultBodyMass_g) # 9972552
+
+# plot
+plot(largemams$X5.1_AdultBodyMass_g) # very basic scatter plot
+hist(largemams$X5.1_AdultBodyMass_g, breaks = 100) # basic histogram
+
+# versions using ggplot
+library(ggplot2)
+
+ggplot(data = largemams, aes(x = 1:nrow(largemams), y = X5.1_AdultBodyMass_g)) +
+    geom_point() +
+    labs(x = "Index")
+
+ggplot(largemams, aes(x = X5.1_AdultBodyMass_g)) + 
+  geom_dotplot()
+
+ggplot(largemams) +
+  aes(x = X5.1_AdultBodyMass_g) +
+  geom_histogram(bins = 50L, fill = "#0c4c8a") +
+  theme_minimal()
+
+
+
+# take a look at the outlier
+largemams[largemams$X5.1_AdultBodyMass_g == max(largemams$X5.1_AdultBodyMass_g), ] # it is the blue whale!
+
+# redo summary stats after removing this one
+largemams_sub <- largemams[!largemams$MSW05_Binomial == "Balaenoptera musculus", ]
+
+# compare stats with and without
+mean(largemams$X5.1_AdultBodyMass_g)/1000  # 1693.584
+mean(largemams_sub$X5.1_AdultBodyMass_g)/1000 # makes quite a difference to the mean, 1279.959
+
+median(largemams$X5.1_AdultBodyMass_g)/1000 # 93.21602
+median(largemams_sub$X5.1_AdultBodyMass_g)/1000 # little difference to the median, 92.95009
+
+sd(largemams$X5.1_AdultBodyMass_g) # 9972552
+sd(largemams_sub$X5.1_AdultBodyMass_g) # 6020653
+
+```
+
+## Additional activities:
+
+Here are some additional exercises to work on to test your skills. 
+
+### More filtering, subsetting and plotting
+
+If you would like more practise for the basics of R choose some of the other variables in the PanTHERIA dataset to explore. Take some time to filter and subset the data, for example, to those species with set values for a variable. Alternatively, you could split the data into groups (e.g. based on size, trophic level etc) and create comparative summaries and plots to explore the differences between those groups. 
+
+
+
+### More advanced: Why not give regular expressions a try. 
+
+The column names of the PanTHERIA dataset are quite annoying! A lot of them start with "X" followed by a number and then an "_", for example "X6.1_DietBreadth". Using regular expressions, write one line of code that can remove this common sequence from the column names (remember, Google can help you).
+
+There is a regular expressions cheat sheet available [here](https://github.com/rstudio/cheatsheets/blob/main/regex.pdf) and [here](https://www.rexegg.com/regex-quickstart.html). 
+
+```{r regex}
+colnames(pantheria) <- sub(".*?_", "", colnames(pantheria)) # this option removes all things before the first _, so also works on those names starting with MSW05_. 
+
+colnames(pantheria) <- sub("X.*?_", "", colnames(pantheria)) # this one does just the parts starting with X.
+
+
+```
+
+
+### The dplyr package
+
+Additionally, see [this tutorial](https://seananderson.ca/2014/09/13/dplyr-intro/) for some examples of explorations of the PanTHERIA database using the dplyr package. This package is part of the [tidyverse](https://www.tidyverse.org/) collection of R packages. These packages are designed to work well together and offer different ways of doing things in R. Some people prefer base plot, while others prefer the tidyverse approach. Give it a try and see which you prefer!

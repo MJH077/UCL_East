@@ -1,0 +1,269 @@
+---
+title: "Practical2"
+output: html_document
+date: "2026-10-17"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(dplyr)
+library(ggplot2)
+library(viridis)
+```
+
+
+### 1. Ranadom seed setting & Data displaying
+```{r}
+set.seed(10)
+
+bci <- read.csv("Practical2_bci_communities.csv")
+
+dim(bci)
+str(bci)
+```
+
+### 2. Exploring the data
+```{r}
+# 采样样方数量
+n_distinct(bci$site_id)
+
+# 物种数量
+n_distinct(bci$species)
+```
+
+### 3. Andira inermis
+```{r}
+# 该物种全部50个样方的总个体数
+andira_total <- sum(bci$count[bci$speices == "Andira inermis"])
+andira_total
+```
+
+### 4. Abund
+```{r}
+abund <- bci %>%
+  group_by(species)%>%
+  summarise(total_abundance = sum(count), .groups = "drop")
+
+head(abund)
+```
+
+### 5. Most abundant & Less 
+```{r}
+abund %>% arrange(desc(total_abundance)) %>% head(3)
+
+nrow(abund %>% filter(total_abundance == 1))
+```
+
+### 6. Histogram
+```{r}
+ggplot(abund, aes(x = total_abundance)) +
+  geom_histogram(bins = 40, fill = "#c84242" ,colour="black") +
+  labs(x="total_abundance", y="count", titles="Species Distribution") +
+  theme_bw()
+```
+
+### 7. Oenocarpus mapora
+```{r}
+om <- bci %>% filter(species == "Oenocarpus mapora")
+
+ggplot(om, aes(x=count)) + 
+  geom_histogram(bins = 15, fill="steelblue", colour="black") +
+  labs(x="count per subplot", y="Frequenncy") + 
+  theme_bw()
+
+ggplot(om, aes(y=count)) +
+  geom_boxplot(fill="steelblue") +
+  theme_bw()
+```
+
+### 8. Comparison between om & pa
+```{r}
+com <- bci %>%
+  filter(species %in% c("Oenocarpus mapora", "Poulsenia armata"))
+
+ggplot(com, aes(x=species, y=count, fill=species)) + 
+  geom_boxplot() +
+  scale_fill_manual(values = c("#348abd", "#E24A33")) +
+  labs(x="Speices", y="Number of individuals per subplot") +
+  theme_bw() +
+  theme(legend.position="none")
+```
+
+### 9. Mean and medium
+```{r}
+om_mean <- mean(om$count)
+pa_mean <- mean(bci$count[bci$speices == "Poulsenia armata"])
+om_mean
+pa_mean
+
+metrics_df <- com %>%
+  group_by(species) %>%
+  summarise(
+    mean_abund = mean(count),
+    median_abund = median(count),
+    .group="drop"
+  )
+metrics_df
+```
+
+### 10. Example of Boxplot
+```{r}
+dat <- bci[bci$species %in% c("Poulsenia armata", "Oenocarpus mapora"), ]
+
+metrics <- data.frame(
+  species = rep(c("Poulsenia armata", "Oenocarpus mapora"), each=2),
+  value = c(
+    mean(bci$count[bci$species == "Poulsenia armata"]),
+    median(bci$count[bci$species == "Poulsenia armata"]),
+    mean(bci$count[bci$species == "Oenocarpus mapora"]),
+    median(bci$count[bci$species == "Oenocarpus mapora"])
+  ),
+  metric = rep(c("mean", "median"), 2)
+)
+
+ggplot() +
+  geom_boxplot(data=dat, aes(x=species, y=count), fill="grey98") +
+  geom_point(data=metrics, aes(x=species, y=value, color=metric, shape=metric), size=5) +
+  scale_shape_manual(values = c(19, 17)) +
+  theme_bw() +
+  scale_color_viridis_d(begin=0.1, end=0.7) +
+  xlab("Species") + ylab("Abundance per subplots")
+```
+
+### 11. Distribution
+```{r}
+normA <- rnorm(n=100, mean=0, sd=1)
+hist(normA, main="Normal n=100")
+abline(v= c(-2, -1, 0, 1, 2), col=c("green", "blue", "red", "blue", "green"), lwd=2)
+
+normB <- rnorm(n=1000, mean=0, sd=1)
+hist(normB, main="Normal n=1000")
+abline(v= c(-2, -1, 0, 1, 2), col=c("green", "blue", "red", "blue", "green"), lwd=2)
+```
+
+### 12. O.mapora
+```{r}
+om_mu <- mean(om$count)
+om_sigma <- sd(om$count)
+om_mu
+om_sigma
+
+# 模拟50个正态样本
+norm_om <- rnorm(n=50, mean=om_mu, sd=om_sigma)
+hist(norm_om, main="Normal simulation same mu,sd as O.mapora")
+```
+
+### 13. Poisson distribution
+```{r}
+pois <- rpois(n=1000, lambda=15)
+hist(pois, main="Poisson lambda=15")
+```
+
+### 14. Tile graph
+```{r}
+dat <- bci[bci$species %in% c("Poulsenia armata", "Oenocarpus mapora"), ]
+
+ggplot(dat) +
+  geom_tile(aes(x_n, y_n, fill=count)) +
+  theme_bw() +
+  scale_fill_viridis_c(option="magma", direction=-1) +
+  facet_wrap(~species) +
+  coord_fixed()
+```
+
+### 15. Simple random sampling
+```{r}
+sample_om <- sample(dat$count[dat$species == "Oenocarpus mapora"], 5, replace=FALSE)
+sample_pa <- sample(dat$count[dat$species == "Poulsenia armata"], 5, replace=FALSE)
+
+mean(sample_om)
+mean(sample_pa)
+
+true_om <- mean(dat$count[dat$species == "Oenocarpus mapora"])
+true_pa <- mean(dat$count[dat$species == "Poulsenia armata"])
+true_om
+true_pa
+```
+
+### 16. 100 sampling (n=5)
+```{r}
+rep = 100
+n = 5
+
+om_vec <- numeric(rep)
+pa_vec <- numeric(rep)
+
+for(i in 1:rep){
+  om_vec[i] <- mean(sample(dat$count[dat$species == "Oenocarpus mapora"], size = n, replace = FALSE))
+  pa_vec[i] <- mean(sample(dat$count[dat$species == "Poulsenia armata"], size = n, replace = FALSE))
+}
+
+par(mfrow=c(1,2))
+hist(om_vec, main="O.mapora sample means n=5")
+abline(v=true_om, col="red", lwd=2)
+hist(pa_vec, main="P.armata sample means n=5")
+abline(v=true_pa, col="red", lwd=2)
+par(mfrow=c(1,1))
+```
+
+### 17. Sample size = 20
+```{r}
+rep = 100
+n = 20
+
+om_vec <- numeric(rep)
+pa_vec <- numeric(rep)
+
+for(i in 1:rep){
+  om_vec[i] <- mean(sample(dat$count[dat$species == "Oenocarpus mapora"], size = n, replace = FALSE))
+  pa_vec[i] <- mean(sample(dat$count[dat$species == "Poulsenia armata"], size = n, replace = FALSE))
+}
+
+par(mfrow=c(1,2))
+hist(om_vec, main="O.mapora sample means n=5")
+abline(v=true_om, col="red", lwd=2)
+hist(pa_vec, main="P.armata sample means n=5")
+abline(v=true_pa, col="red", lwd=2)
+par(mfrow=c(1,1))
+```
+
+### 18. Random sample mean
+```{r}
+randomSampleMean = function(spp, sample_size){
+  samp <- c()
+  for(i in 1:100){
+    samp <- c(samp, mean(sample(bci$count[bci$species == spp], sample_size, replace=FALSE)))
+  }
+  result <- data.frame(
+    species = spp,
+    sample_mean = samp,
+    sample_size = sample_size
+  )
+  return(result)
+}
+
+pa5  <- randomSampleMean(spp = "Poulsenia armata", sample_size = 5)
+pa10 <- randomSampleMean(spp = "Poulsenia armata", sample_size = 10)
+pa20 <- randomSampleMean(spp = "Poulsenia armata", sample_size = 20)
+pa30 <- randomSampleMean(spp = "Poulsenia armata", sample_size = 30)
+
+om5  <- randomSampleMean(spp = "Oenocarpus mapora", sample_size = 5)
+om10 <- randomSampleMean(spp = "Oenocarpus mapora", sample_size = 10)
+om20 <- randomSampleMean(spp = "Oenocarpus mapora", sample_size = 20)
+om30 <- randomSampleMean(spp = "Oenocarpus mapora", sample_size = 30)
+
+data_for_plot <- do.call(rbind.data.frame,
+                         list(pa5, pa10, pa20, pa30, om5, om10, om20, om30))
+
+true_means <- data.frame(
+  species = c("Poulsenia armata","Oenocarpus mapora"),
+  mean_abund = c(true_pa, true_om)
+)
+
+ggplot(data_for_plot)+
+  geom_histogram(aes(x=sample_mean, fill=species), bins=25)+
+  geom_vline(data=true_means, aes(xintercept=mean_abund), col="darkblue", lty=2, linewidth=1)+
+  facet_grid(sample_size~species)+
+  theme_bw()+
+  theme(legend.position="none")
+```
